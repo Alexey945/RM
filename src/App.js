@@ -1,44 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import bridge from '@vkontakte/vk-bridge';
-import View from '@vkontakte/vkui/dist/components/View/View';
-import ScreenSpinner from '@vkontakte/vkui/dist/components/ScreenSpinner/ScreenSpinner';
-import '@vkontakte/vkui/dist/vkui.css';
+import React from 'react';
+import { ConfigProvider, Epic, Tabbar, TabbarItem, View } from '@vkontakte/vkui'; 
+import Home from './panels/Home'
+import Home1 from './panels/Home1'
+import Icon28Profile from '@vkontakte/icons/dist/28/profile';
+import Icon28StatisticsOutline from '@vkontakte/icons/dist/28/statistics_outline';
 
-import Home from './panels/Home';
-import Persik from './panels/Persik';
+
 
 const App = () => {
-	const [activePanel, setActivePanel] = useState('home');
-	const [fetchedUser, setUser] = useState(null);
-	const [popout, setPopout] = useState(<ScreenSpinner size='large' />);
+  const [schema]=React.useState('bright_light')
+  const [activeStory,changeActiveStory]=React.useState('feed')
+  const [tabbar]=React.useState(true)
+  const [user]=React.useState(null)
+  const [achivments] = React.useState([])
+  const onStoryChange = (e) => {
+    const a = e.currentTarget.dataset.story;
+    changeActiveStory(a?a:'feed')
+  }
+  const go = (e) => {
+    const a = e.currentTarget.dataset.to;
+    changeActiveStory(prev=>a!==undefined?a:prev)
+  }
 
-	useEffect(() => {
-		bridge.subscribe(({ detail: { type, data }}) => {
-			if (type === 'VKWebAppUpdateConfig') {
-				const schemeAttribute = document.createAttribute('scheme');
-				schemeAttribute.value = data.scheme ? data.scheme : 'client_light';
-				document.body.attributes.setNamedItem(schemeAttribute);
-			}
-		});
-		async function fetchData() {
-			const user = await bridge.send('VKWebAppGetUserInfo');
-			setUser(user);
-			setPopout(null);
-		}
-		fetchData();
-	}, []);
-
-	const go = e => {
-		setActivePanel(e.currentTarget.dataset.to);
-	};
-
-	return (
-		<View activePanel={activePanel} popout={popout}>
-			<Home id='home' fetchedUser={fetchedUser} go={go} />
-			<Persik id='persik' go={go} />
-		</View>
-	);
+  return (
+    <ConfigProvider isWebView={true} scheme={schema}>
+      <Epic activeStory={activeStory} tabbar={tabbar&&
+        <Tabbar style={{visibility: 'hidden'}}>
+          <TabbarItem
+            onClick={onStoryChange}
+            selected={activeStory === 'feed'}
+            data-story="feed"
+          ><Icon28StatisticsOutline /></TabbarItem>
+          <TabbarItem
+            onClick={onStoryChange}
+            selected={activeStory === 'notifications'}
+            data-story="notifications"
+            
+          ><Icon28Profile /></TabbarItem>
+        </Tabbar>
+      }>
+        <View id="feed" activePanel="home">
+          <Home id="home" fetchedUser={user} go={go} />
+        </View>
+        <View id="notifications" activePanel="home">
+          <Home1 id="home" fetchedUser={user} go={go} achivments={achivments} />
+        </View>
+      </Epic>
+    </ConfigProvider>
+  );
 }
-
 export default App;
+ 
+
+
 
